@@ -6,31 +6,8 @@ from typing import List, Set, Dict, Tuple, Optional, Any
 from typing import Callable, Iterator, Union, Optional, List
 
 from det3d.mtr_dataset.config import config
+from det3d.mtr_dataset.utils.object3d import id_to_cls_type, cls_type_to_id
 
-def id2str(id: int) -> str:
-    """ This is a function that maps the id to the string. 
-        Its definition is declared in the config.py
-
-    Args:
-        id (int): The id of the object type
-
-    Returns:
-        str: The string of the object type
-    """
-    return config['class_map'][id]
-
-def str2id(classname: str) -> int:
-    """This is a function that maps the string of the object type to its id.
-       The mapping is defined in the config.py
-
-    Args:
-        classname (str): The string of the object type  
-
-    Returns:
-        int: The id of the object type
-    """
-    str2id_map = {v: k for k, v in config['class_map'].items()}
-    return str2id_map[classname]
 
 def sort_list(directory_list: List[str], charbefore:int = 20) -> List[str]:
     """This is a custom sort function that is used to sort the filename
@@ -252,8 +229,8 @@ def load_annotations_from_file_in_mtr_format(filepath: str) -> List[Union[str, i
         annotation_list = []
         track_id = -1
         for bboxes in bounding_boxes:
-            if bboxes['center']['z'] is None or bboxes['height'] is None or bboxes['height'] < 0.001 \
-                or bboxes['width'] < 0.001 or bboxes['length'] < 0.001:
+            if(bboxes['center']['z'] is None or bboxes['height'] is None or bboxes['height'] < 0.01 \
+                or bboxes['width'] < 0.01 or bboxes['length'] < 0.01):
                 continue
             # annotation = [frame_id, -1]
             annotation = []
@@ -329,8 +306,8 @@ def load_annotations_from_file_in_kittimot_format(filepath: str, frame_id: int) 
         annotation_list = []
         track_id = -1
         for bboxes in bounding_boxes:
-            if bboxes['center']['z'] is None or bboxes['height'] is None or bboxes['height'] < 0.001 \
-                or bboxes['width'] < 0.001 or bboxes['length'] < 0.001:
+            if(bboxes['center']['z'] is None or bboxes['height'] is None or bboxes['height'] < 0.01 \
+                or bboxes['width'] < 0.01 or bboxes['length'] < 0.01):
                 continue
             annotation = [frame_id, -1]
             # print("type: ", str2id(bboxes['object_id']))

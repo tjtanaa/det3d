@@ -5,7 +5,7 @@ bin
 develop-eggs
 dist
 downloads
-eggs
+/det3d.egg-info/
 parts
 src/*.egg-info
 lib

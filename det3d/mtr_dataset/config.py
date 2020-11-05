@@ -4,6 +4,7 @@ import os
 config = {}
 
 config['class_map'] = {1: "pedestrian", 2: "others"}
+config['train_test_split'] = 0.9
 
 config['point_cloud'] = {}
 config['point_cloud']['height'] = 128

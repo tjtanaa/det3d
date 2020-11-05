@@ -1,4 +1,4 @@
-from det3d.mtr_dataset.mtr_dataset_base import MTRDatasetBase
+from det3d.pc_mtr_dataset.pc_mtr_database_generator import PCMTRDatabaseGenerator
 
 
 
@@ -7,10 +7,23 @@ if __name__ == "__main__":
     dataset_path = "/home/tjtanaa/Documents/AKK/Project4-MTR"
     point_cloud_statistics_path = "/home/tjtanaa/Documents/Github/det3d/det3d/mtr_dataset/point_cloud_statistics"
 
-    dataset = MTRDatasetBase(dataset_path, 'train', point_cloud_statistics_path)
+    train_dataset = PCMTRDatabaseGenerator(dataset_path, 'train', point_cloud_statistics_path)
     print("================== Dataset ======================")
-    train_data_filename_list, train_directory_index = dataset.load_filenames_by_directory()
-    print("Number of samples\t:", dataset.num_sample)
+    print("Number of samples\t:", train_dataset.num_sample)
+
+    print("====== Generate Train-Ground Truth Database ===========")
+    database_path = "/home/tjtanaa/Documents/AKK/Project4-MTR/Database"
+    print("Save to \t:", train_dataset)
+    train_dataset.generate_gt_database(database_path)
+
+    test_dataset = PCMTRDatabaseGenerator(dataset_path, 'test', point_cloud_statistics_path)
+    print("================== Dataset ======================")
+    print("Number of samples\t:", test_dataset.num_sample)
+
+    print("====== Generate Test-Ground Truth Database ===========")
+    database_path = "/home/tjtanaa/Documents/AKK/Project4-MTR/Database"
+    print("Save to \t:", database_path)
+    test_dataset.generate_gt_database(database_path)
 
     # print("========= Generate Training Samples Metadata ====")
     # metadata_path = "/home/tjtanaa/Documents/AKK/Project4-MTR"
