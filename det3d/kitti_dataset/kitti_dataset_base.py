@@ -7,7 +7,7 @@ import det3d.kitti_dataset.utils.kitti_utils as kitti_utils
 from PIL import Image
 
 
-class KittiDataset(object):
+class KittiDatasetBase(object):
     """ This is a base class of kitti dataset.
         You have to extend this class to create your own KITTI Dataset Loader.
         Currently it only supports mono image.

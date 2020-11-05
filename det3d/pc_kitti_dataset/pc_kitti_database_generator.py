@@ -11,14 +11,14 @@ import os
 import numpy as np 
 import pickle
 from det3d.kitti_dataset.utils import kitti_utils
-from det3d.kitti_dataset.kitti_dataset import KittiDataset
+from det3d.kitti_dataset.kitti_dataset_base import KittiDatasetBase
 
 
-class PCKittiDatabaseGenerator(KittiDataset):
+class PCKittiDatabaseGenerator(KittiDatasetBase):
     """[summary]
 
     Args:
-        KittiDataset ([type]): [description]
+        KittiDatasetBase ([type]): [description]
     """
     def __init__(self, root_dir, split='train', classes='Car'):
         print("PCKittiDatabaseGenerator\t: root\t:", root_dir)
