@@ -1,0 +1,8 @@
+{
+    "DATA_PATH": "/media/data3/tjtanaa/kitti_dataset/KITTI/object/",
+    "SAVE_PATH": "/media/data3/tjtanaa/kitti_dataset/tutorial/car" ,
+    "CLASS_OF_INTEREST": [1,2,3,4,5],
+    "DIFFICULTY": [2],
+    "INTERESTED_SAMPLE_RATIO": 0.5
+    
+}

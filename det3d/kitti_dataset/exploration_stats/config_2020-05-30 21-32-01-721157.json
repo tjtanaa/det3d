@@ -1,0 +1,11 @@
+{
+    "DATA_PATH": "/media/data3/tjtanaa/kitti_dataset/KITTI/object/",
+    "SAVE_PATH": "/media/data3/tjtanaa/kitti_dataset/temp",
+    "SUB_SAMPLING_RATIO" : [0.7, 0.7, 0.7, 0.7],
+    "NUM_POINTS": 20000,
+    "CLASS_OF_INTEREST": [2],
+    "DIFFICULTY": [1],
+    "RESAMPLING_FREQUENCY": 20,
+    "INTERESTED_SAMPLE_RATIO": 0.1
+    
+}

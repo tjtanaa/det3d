@@ -1,0 +1,7 @@
+{
+    "TRAINING_DATA_PATH":"/media/data3/tjtanaa/kitti_dataset/tutorial/training",
+    "BATCH_SIZE": 4,
+    "NUM_POINTS": 16384,
+    "SUB": [4,4,2],
+    "NUM_LAYERS": 3
+}
