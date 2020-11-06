@@ -10,3 +10,7 @@ parts
 src/*.egg-info
 lib
 lib64
+/demos/data/
+/demos/html/
+/demos/src/
+/demos/ipynb_checkpoints/

@@ -1,4 +1,4 @@
-from det3d.kitti_dataset.kitti_dataset import KittiDatasetBase
+from det3d.kitti_dataset.kitti_dataset_base import KittiDatasetBase
 
 
 

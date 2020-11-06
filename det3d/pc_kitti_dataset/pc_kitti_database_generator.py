@@ -10,8 +10,11 @@
 import os
 import numpy as np 
 import pickle
+from typing import List, Set, Dict, Tuple, Optional, Any
+from typing import Callable, Iterator, Union, Optional, List
 from det3d.kitti_dataset.utils import kitti_utils
 from det3d.kitti_dataset.kitti_dataset_base import KittiDatasetBase
+
 
 
 class PCKittiDatabaseGenerator(KittiDatasetBase):
@@ -52,7 +55,7 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
 
         return valid_obj_list
 
-    def generate_gt_database(self, save_path:str) -> None:
+    def generate_gt_database(self, save_path:str) -> Any:
         gt_database = []
         for idx, sample_id in enumerate(self.image_idx_list):
             sample_id = int(sample_id)
@@ -85,8 +88,12 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
                 box3d_roi_inds = kitti_utils.in_hull(pts_rect[:,:3], bbox3d_corners)
                 boxes_pts_mask_list.append(box3d_roi_inds)
 
+            total_mask = boxes_pts_mask_list[0]
             for k in range(boxes_pts_mask_list.__len__()):
                 pt_mask_flag = boxes_pts_mask_list[k]
+                total_mask |= pt_mask_flag
+                if(np.sum(total_mask) == 0):
+                    print("Bbox \t:", k, " does not enclose any points")
                 cur_pts = pts_rect[pt_mask_flag].astype(np.float32)
                 cur_pts_intensity = pts_intensity[pt_mask_flag].astype(np.float32)
                 sample_dict = {'sample_id': sample_id,
@@ -98,7 +105,9 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
                 # print(cur_pts.shape)
                 gt_database.append(sample_dict)
 
-        save_file_name = os.path.join(save_path, '%s_gt_database_3level_%s.pkl' % (args.split, self.classes[-1]))
+            # return pts_rect, pts_intensity, total_mask
+            
+        save_file_name = os.path.join(save_path, '%s_gt_database_level_%s.pkl' % (self.split, self.classes[-1]))
         with open(save_file_name, 'wb') as f:
             pickle.dump(gt_database, f)
 
