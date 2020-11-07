@@ -8,10 +8,13 @@
 
 import os
 import numpy as np 
+import pickle
 from typing import List, Set, Dict, Tuple, Optional, Any
 from typing import Callable, Iterator, Union, Optional, List
 from det3d.kitti_dataset.utils import kitti_utils
 from det3d.kitti_dataset.kitti_dataset_base import KittiDatasetBase
+from det3d.pc_kitti_dataset.config import cfg
+from det3d.point_cloud_utils.transformation import limit_period
 
 class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
     """
@@ -23,7 +26,7 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
 
     def __init__(self, root_dir:str, npoints:int =16384, split: str ='train', 
                 classes:str ='Car', mode:str='TRAIN', random_select:bool =True,
-                gt_database_dir=None, aug_hard_ratio:float=0.2):
+                gt_database_dir=None, aug_hard_ratio:float=0.):
         super().__init__(root_dir=root_dir, split=split)
         if classes == 'Car':
             self.classes = ('Background', 'Car')
@@ -45,12 +48,12 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
         self.sample_id_list = []
         self.random_select = random_select
 
-        # if split == 'train_aug':
-        #     self.aug_label_dir = os.path.join(aug_scene_root_dir, 'training', 'aug_label')
-        #     self.aug_pts_dir = os.path.join(aug_scene_root_dir, 'training', 'rectified_data')
-        # else:
-        #     self.aug_label_dir = os.path.join(aug_scene_root_dir, 'training', 'aug_label')
-        #     self.aug_pts_dir = os.path.join(aug_scene_root_dir, 'training', 'rectified_data')
+        if split == 'train_aug':
+            self.aug_label_dir = os.path.join(aug_scene_root_dir, 'training', 'aug_label')
+            self.aug_pts_dir = os.path.join(aug_scene_root_dir, 'training', 'rectified_data')
+        else:
+            self.aug_label_dir = os.path.join(aug_scene_root_dir, 'training', 'aug_label')
+            self.aug_pts_dir = os.path.join(aug_scene_root_dir, 'training', 'rectified_data')
 
         self.gt_database = None
         self.aug_hard_ratio = aug_hard_ratio
@@ -75,6 +78,8 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
             else:
                 # logger.info('Loading gt_database(%d) from %s' % (len(self.gt_database), gt_database_dir))
                 pass
+        else:
+            cfg.GT_AUG_ENABLED = False
 
         if self.mode == 'TRAIN':
             self.preprocess_rpn_training_data()
@@ -193,32 +198,14 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
         return pts_valid_flag
 
     def __len__(self):
-        if cfg.RPN.ENABLED:
-            return len(self.sample_id_list)
-        elif cfg.RCNN.ENABLED:
-            if self.mode == 'TRAIN':
-                return len(self.sample_id_list)
-            else:
-                return len(self.image_idx_list)
-        else:
-            raise NotImplementedError
+        return len(self.sample_id_list)
 
     def __getitem__(self, index):
-        if cfg.RPN.ENABLED:
-            return self.get_rpn_sample(index)
-        elif cfg.RCNN.ENABLED:
-            if self.mode == 'TRAIN':
-                if cfg.RCNN.ROI_SAMPLE_JIT:
-                    return self.get_rcnn_sample_jit(index)
-                else:
-                    return self.get_rcnn_training_sample_batch(index)
-            else:
-                return self.get_proposal_from_file(index)
-        else:
-            raise NotImplementedError
+        return self.get_rpn_sample(index)
 
     def get_rpn_sample(self, index):
         sample_id = int(self.sample_id_list[index])
+        # print("sample_id: ", sample_id)
         if sample_id < 10000:
             calib = self.get_calib(sample_id)
             # img = self.get_image(sample_id)
@@ -258,8 +245,8 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
         # generate inputs
         if self.mode == 'TRAIN' or self.random_select:
             if self.npoints < len(pts_rect):
-                pts_depth = pts_rect[:, 2]
-                pts_near_flag = pts_depth < 40.0
+                pts_depth = pts_rect[:, 2] # Front direction z-axis
+                pts_near_flag = pts_depth < 40.0 # Front direction z axis in camera coordinate
                 far_idxs_choice = np.where(pts_near_flag == 0)[0]
                 near_idxs = np.where(pts_near_flag == 1)[0]
                 near_idxs_choice = np.random.choice(near_idxs, self.npoints - len(far_idxs_choice), replace=False)
@@ -348,16 +335,16 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
             fg_pts_rect = pts_rect[fg_pt_flag]
             cls_label[fg_pt_flag] = 1
 
-            # enlarge the bbox3d, ignore nearby points
+            # enlarge the bbox3d, ignore nearby points (WHY?)
             extend_box_corners = extend_gt_corners[k]
             fg_enlarge_flag = kitti_utils.in_hull(pts_rect, extend_box_corners)
             ignore_flag = np.logical_xor(fg_pt_flag, fg_enlarge_flag)
             cls_label[ignore_flag] = -1
 
-            # pixel offset of object center
+            # pixel offset of object center 
             center3d = gt_boxes3d[k][0:3].copy()  # (x, y, z)
-            center3d[1] -= gt_boxes3d[k][3] / 2
-            reg_label[fg_pt_flag, 0:3] = center3d - fg_pts_rect  # Now y is the true center of 3d box 20180928
+            center3d[1] -= gt_boxes3d[k][3] / 2 # (y - h/2) This is true
+            reg_label[fg_pt_flag, 0:3] = center3d - fg_pts_rect  # Now y is the true center of 3d box 20180928 by KITTI
 
             # size and angle encoding
             reg_label[fg_pt_flag, 3] = gt_boxes3d[k][3]  # h
@@ -382,7 +369,7 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
     def apply_gt_aug_to_one_scene(self, sample_id, pts_rect, pts_intensity, all_gt_boxes3d):
         """
         :param pts_rect: (N, 3)
-        :param all_gt_boxex3d: (M2, 7)
+        :param all_gt_boxex3d: (M2, 7) [x y z h w l ry]
         :return:
         """
         assert self.gt_database is not None
@@ -439,10 +426,14 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
 
             # put it on the road plane
             cur_height = (-d - a * center[0] - c * center[2]) / b
+            
+            
             move_height = new_gt_box3d[1] - cur_height
-            new_gt_box3d[1] -= move_height
-            new_gt_points[:, 1] -= move_height
-            new_gt_obj.pos[1] -= move_height
+            new_gt_box3d[1] = new_gt_box3d[1] - move_height 
+            new_gt_points[:, 1] = new_gt_points[:, 1] - move_height
+            new_gt_obj.pos[1] = new_gt_obj.pos[1] - move_height
+
+            # print("cur_height: ", cur_height, "move_height: ", move_height)
 
             new_enlarged_box3d = new_gt_box3d.copy()
             new_enlarged_box3d[4] += 0.5
@@ -458,9 +449,19 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
             enlarged_box3d = new_gt_box3d.copy()
             enlarged_box3d[3] += 2  # remove the points above and below the object
 
-            boxes_pts_mask_list = roipool3d_utils.pts_in_boxes3d_cpu(
-                torch.from_numpy(pts_rect), torch.from_numpy(enlarged_box3d.reshape(1, 7)))
-            pt_mask_flag = (boxes_pts_mask_list[0].numpy() == 1)
+            # boxes_pts_mask_list = roipool3d_utils.pts_in_boxes3d_cpu(
+            #     torch.from_numpy(pts_rect), torch.from_numpy(enlarged_box3d.reshape(1, 7)))
+
+            boxes_pts_mask_list = []
+            # print(enlarged_box3d.shape)
+
+            enlarged_box3d_rotated_corners = kitti_utils.boxes3d_to_corners3d(enlarged_box3d[np.newaxis,:])
+
+            for i, bbox3d_corners in enumerate(enlarged_box3d_rotated_corners):
+                box3d_roi_inds = kitti_utils.in_hull(pts_rect[:,:3], bbox3d_corners)
+                boxes_pts_mask_list.append(box3d_roi_inds)
+
+            pt_mask_flag = (boxes_pts_mask_list[0] == 1)
             src_pts_flag[pt_mask_flag] = 0  # remove the original points which are inside the new box
 
             new_pts_list.append(new_gt_points)
@@ -482,9 +483,10 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
         pts_rect = np.concatenate((pts_rect, new_pts_rect), axis=0)
         pts_intensity = np.concatenate((pts_intensity, new_pts_intensity), axis=0)
 
+        # print("Added ", len(extra_gt_boxes3d), " extra boxes")
         return True, pts_rect, pts_intensity, extra_gt_boxes3d, extra_gt_obj_list
 
-    def data_augmentation(self, aug_pts_rect, aug_gt_boxes3d, gt_alpha, sample_id=None, mustaug=False, stage=1):
+    def data_augmentation(self, aug_pts_rect, aug_gt_boxes3d, gt_alpha, sample_id=None, mustaug=False):
         """
         :param aug_pts_rect: (N, 3)
         :param aug_gt_boxes3d: (N, 7)
@@ -500,22 +502,17 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
         if 'rotation' in aug_list and aug_enable[0] < cfg.AUG_METHOD_PROB[0]:
             angle = np.random.uniform(-np.pi / cfg.AUG_ROT_RANGE, np.pi / cfg.AUG_ROT_RANGE)
             aug_pts_rect = kitti_utils.rotate_pc_along_y(aug_pts_rect, rot_angle=angle)
-            if stage == 1:
-                # xyz change, hwl unchange
-                aug_gt_boxes3d = kitti_utils.rotate_pc_along_y(aug_gt_boxes3d, rot_angle=angle)
+            # xyz change, hwl unchange
+            aug_gt_boxes3d = kitti_utils.rotate_pc_along_y(aug_gt_boxes3d, rot_angle=angle)
 
-                # calculate the ry after rotation
-                x, z = aug_gt_boxes3d[:, 0], aug_gt_boxes3d[:, 2]
-                beta = np.arctan2(z, x)
-                new_ry = np.sign(beta) * np.pi / 2 + gt_alpha - beta
-                aug_gt_boxes3d[:, 6] = new_ry  # TODO: not in [-np.pi / 2, np.pi / 2]
-            elif stage == 2:
-                # for debug stage-2, this implementation has little float precision difference with the above one
-                assert aug_gt_boxes3d.shape[0] == 2
-                aug_gt_boxes3d[0] = self.rotate_box3d_along_y(aug_gt_boxes3d[0], angle)
-                aug_gt_boxes3d[1] = self.rotate_box3d_along_y(aug_gt_boxes3d[1], angle)
-            else:
-                raise NotImplementedError
+            # calculate the ry after rotation
+            x, z = aug_gt_boxes3d[:, 0], aug_gt_boxes3d[:, 2]
+            beta = np.arctan2(z, x)
+            new_ry = np.sign(beta) * np.pi / 2 + gt_alpha - beta
+            aug_gt_boxes3d[:, 6] = limit_period(new_ry, offset=1.0, period=2*np.pi)  # TODO: not in [-np.pi / 2, np.pi / 2]
+
+            # new_ry = aug_gt_boxes3d[:, 6] + angle
+            # aug_gt_boxes3d[:, 6] = limit_period(new_ry, offset=1.0, period=2*np.pi)
 
             aug_method.append(['rotation', angle])
 
@@ -530,15 +527,7 @@ class PCKittiSingleStagePointwiseDataset(KittiDatasetBase):
             aug_pts_rect[:, 0] = -aug_pts_rect[:, 0]
             aug_gt_boxes3d[:, 0] = -aug_gt_boxes3d[:, 0]
             # flip orientation: ry > 0: pi - ry, ry < 0: -pi - ry
-            if stage == 1:
-                aug_gt_boxes3d[:, 6] = np.sign(aug_gt_boxes3d[:, 6]) * np.pi - aug_gt_boxes3d[:, 6]
-            elif stage == 2:
-                assert aug_gt_boxes3d.shape[0] == 2
-                aug_gt_boxes3d[0, 6] = np.sign(aug_gt_boxes3d[0, 6]) * np.pi - aug_gt_boxes3d[0, 6]
-                aug_gt_boxes3d[1, 6] = np.sign(aug_gt_boxes3d[1, 6]) * np.pi - aug_gt_boxes3d[1, 6]
-            else:
-                raise NotImplementedError
-
+            aug_gt_boxes3d[:, 6] = np.sign(aug_gt_boxes3d[:, 6]) * np.pi - aug_gt_boxes3d[:, 6]
             aug_method.append('flip')
 
         return aug_pts_rect, aug_gt_boxes3d, aug_method

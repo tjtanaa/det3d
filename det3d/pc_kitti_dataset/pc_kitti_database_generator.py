@@ -16,7 +16,6 @@ from det3d.kitti_dataset.utils import kitti_utils
 from det3d.kitti_dataset.kitti_dataset_base import KittiDatasetBase
 
 
-
 class PCKittiDatabaseGenerator(KittiDatasetBase):
     """[summary]
 
@@ -64,7 +63,7 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
             pts_lidar = self.get_lidar(sample_id)
             calib = self.get_calib(sample_id)
             pts_rect = calib.lidar_to_rect(pts_lidar[:, 0:3])
-            pts_intensity = pts_lidar[:, 3]
+            pts_intensity = pts_lidar[:, 3] # [0 ~ 1]
 
             obj_list = self.filtrate_objects(self.get_label(sample_id)) # are labels
 
@@ -105,6 +104,7 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
                 # print(cur_pts.shape)
                 gt_database.append(sample_dict)
 
+            print(np.max(pts_intensity[total_mask]))
             # return pts_rect, pts_intensity, total_mask
             
         save_file_name = os.path.join(save_path, '%s_gt_database_level_%s.pkl' % (self.split, self.classes[-1]))

@@ -2,7 +2,7 @@ from __future__ import division
 
 import numpy as np
 from numpy.linalg import multi_dot
-import cv2
+# import cv2
 from typing import List, Set, Dict, Tuple, Optional
 from typing import Callable, Iterator, Union, Optional, List, Any
 
@@ -32,6 +32,9 @@ def uni_dist(mean, shift):
         return return_value
     else:
         return mean
+
+def limit_period(val, offset=0.5, period=np.pi):
+    return val - np.floor(val / period + offset) * period
 
 def scale_matrix(scale: List[float]) -> Any:
     """
