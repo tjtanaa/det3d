@@ -1,6 +1,8 @@
 import numpy as np
 from scipy.spatial import Delaunay
 import scipy
+from typing import List, Set, Dict, Tuple, Optional, Any
+from typing import Callable, Iterator, Union, Optional, List
 import det3d.kitti_dataset.utils.object3d as object3d
 # import torch
 
@@ -191,6 +193,13 @@ def objs_to_boxes3d(obj_list):
         boxes3d[k, 0:3], boxes3d[k, 3], boxes3d[k, 4], boxes3d[k, 5], boxes3d[k, 6] \
             = obj.pos, obj.h, obj.w, obj.l, obj.ry
     return boxes3d
+
+
+def objs_to_cls_type(obj_list) -> List[str]:
+    cls_type_list = []
+    for k, obj in enumerate(obj_list):
+        cls_type_list.append(obj.cls_type)
+    return cls_type_list
 
 
 def objs_to_scores(obj_list):

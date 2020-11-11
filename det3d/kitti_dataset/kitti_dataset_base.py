@@ -37,6 +37,7 @@ class KittiDatasetBase(object):
 
         split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', split + '.txt')
         self.image_idx_list = [x.strip() for x in open(split_dir).readlines()]
+        # print(len(self.image_idx_list))
         self.num_sample = self.image_idx_list.__len__()
 
         self.image_dir = os.path.join(self.imageset_dir, 'image_2')

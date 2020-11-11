@@ -22,20 +22,23 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
     Args:
         KittiDatasetBase ([type]): [description]
     """
-    def __init__(self, root_dir, split='train', classes='Car'):
+    def __init__(self, root_dir, split='train', classes:List[str]=['Car']):
         print("PCKittiDatabaseGenerator\t: root\t:", root_dir)
         super().__init__(root_dir, split=split)
         self.gt_database = None
-        if classes == 'Car':
-            self.classes = ('Background', 'Car')
-        elif classes == 'People':
-            self.classes = ('Background', 'Pedestrian', 'Cyclist')
-        elif classes == 'Pedestrian':
-            self.classes = ('Background', 'Pedestrian')
-        elif classes == 'Cyclist':
-            self.classes = ('Background', 'Cyclist')
-        else:
-            assert False, "Invalid classes: %s" % classes
+        self.classes = ['Background']
+        classes.sort()
+        self.classes.extend(classes)
+        # if classes == 'Car':
+        #     self.classes = ('Background', 'Car')
+        # elif classes == 'People':
+        #     self.classes = ('Background', 'Pedestrian', 'Cyclist')
+        # elif classes == 'Pedestrian':
+        #     self.classes = ('Background', 'Pedestrian')
+        # elif classes == 'Cyclist':
+        #     self.classes = ('Background', 'Cyclist')
+        # else:
+        #     assert False, "Invalid classes: %s" % classes
 
     def __len__(self):
         raise NotImplementedError
@@ -104,10 +107,10 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
                 # print(cur_pts.shape)
                 gt_database.append(sample_dict)
 
-            print(np.max(pts_intensity[total_mask]))
+            # print(np.max(pts_intensity[total_mask]))
             # return pts_rect, pts_intensity, total_mask
             
-        save_file_name = os.path.join(save_path, '%s_gt_database_level_%s.pkl' % (self.split, self.classes[-1]))
+        save_file_name = os.path.join(save_path, '%s_gt_database_level_%s.pkl' % (self.split, '_'.join(self.classes)))
         with open(save_file_name, 'wb') as f:
             pickle.dump(gt_database, f)
 

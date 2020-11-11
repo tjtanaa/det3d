@@ -7,7 +7,26 @@ cfg = __C
 
 # 0. basic config
 __C.TAG = 'default'
-__C.CLASSES = 'Car'
+__C.CLASSES = ['Car']
+__C.CLASSES_ID_MAPPING = {
+                "Background":        0,
+                "Car":               1,
+                "Pedestrian":        2,
+                "Person_sitting":    2,
+                "Cyclist":           3,
+                "Truck":             4,
+                "Van":               1,
+                "Tram":              4,
+                "Misc":              4,
+                }
+
+__C.ID_CLASSES_MAPPING = {
+                "0": "Background",
+                "1": "Car",
+                "2": "Pedestrian",
+                "3": "Cyclist",
+                "4": "Misc",
+                }
 
 __C.INCLUDE_SIMILAR_TYPE = False
 
@@ -30,47 +49,12 @@ __C.PC_AREA_SCOPE = np.array([[-40, 40],
 
 __C.CLS_MEAN_SIZE = np.array([[1.52, 1.63, 3.88]], dtype=np.float32)
 
-
 # 1. config of rpn network
 __C.RPN = edict()
 __C.RPN.ENABLED = True
 __C.RPN.FIXED = False
 
 __C.RPN.USE_INTENSITY = True
-
-# config of bin-based loss
-__C.RPN.LOC_XZ_FINE = False
-__C.RPN.LOC_SCOPE = 3.0
-__C.RPN.LOC_BIN_SIZE = 0.5
-__C.RPN.NUM_HEAD_BIN = 12
-
-# config of network structure
-__C.RPN.BACKBONE = 'pointnet2_msg'
-
-__C.RPN.USE_BN = True
-__C.RPN.NUM_POINTS = 16384
-
-__C.RPN.SA_CONFIG = edict()
-__C.RPN.SA_CONFIG.NPOINTS = [4096, 1024, 256, 64]
-__C.RPN.SA_CONFIG.RADIUS = [[0.1, 0.5], [0.5, 1.0], [1.0, 2.0], [2.0, 4.0]]
-__C.RPN.SA_CONFIG.NSAMPLE = [[16, 32], [16, 32], [16, 32], [16, 32]]
-__C.RPN.SA_CONFIG.MLPS = [[[16, 16, 32], [32, 32, 64]],
-                          [[64, 64, 128], [64, 96, 128]],
-                          [[128, 196, 256], [128, 196, 256]],
-                          [[256, 256, 512], [256, 384, 512]]]
-__C.RPN.FP_MLPS = [[128, 128], [256, 256], [512, 512], [512, 512]]
-__C.RPN.CLS_FC = [128]
-__C.RPN.REG_FC = [128]
-__C.RPN.DP_RATIO = 0.5
-
-# config of training
-__C.RPN.LOSS_CLS = 'DiceLoss'
-__C.RPN.FG_WEIGHT = 15
-__C.RPN.FOCAL_ALPHA = [0.25, 0.75]
-__C.RPN.FOCAL_GAMMA = 2.0
-__C.RPN.REG_LOSS_WEIGHT = [1.0, 1.0, 1.0, 1.0]
-__C.RPN.LOSS_WEIGHT = [1.0, 1.0]
-__C.RPN.NMS_TYPE = 'normal'  # normal, rotate
 
 # config of testing
 __C.RPN.SCORE_THRESH = 0.3
@@ -93,83 +77,9 @@ __C.RCNN.ROI_FG_AUG_TIMES = 10
 __C.RCNN.REG_AUG_METHOD = 'multiple'  # multiple, single, normal
 __C.RCNN.POOL_EXTRA_WIDTH = 1.0
 
-# config of bin-based loss
-__C.RCNN.LOC_SCOPE = 1.5
-__C.RCNN.LOC_BIN_SIZE = 0.5
-__C.RCNN.NUM_HEAD_BIN = 9
-__C.RCNN.LOC_Y_BY_BIN = False
-__C.RCNN.LOC_Y_SCOPE = 0.5
-__C.RCNN.LOC_Y_BIN_SIZE = 0.25
-__C.RCNN.SIZE_RES_ON_ROI = False
-
-# config of network structure
-__C.RCNN.USE_BN = False
-__C.RCNN.DP_RATIO = 0.0
-
-__C.RCNN.BACKBONE = 'pointnet'  # pointnet, pointsift
-__C.RCNN.XYZ_UP_LAYER = [128, 128]
-
-__C.RCNN.NUM_POINTS = 512
-__C.RCNN.SA_CONFIG = edict()
-__C.RCNN.SA_CONFIG.NPOINTS = [128, 32, -1]
-__C.RCNN.SA_CONFIG.RADIUS = [0.2, 0.4, 100]
-__C.RCNN.SA_CONFIG.NSAMPLE = [64, 64, 64]
-__C.RCNN.SA_CONFIG.MLPS = [[128, 128, 128],
-                           [128, 128, 256],
-                           [256, 256, 512]]
-__C.RCNN.CLS_FC = [256, 256]
-__C.RCNN.REG_FC = [256, 256]
-
-# config of training
-__C.RCNN.LOSS_CLS = 'BinaryCrossEntropy'
-__C.RCNN.FOCAL_ALPHA = [0.25, 0.75]
-__C.RCNN.FOCAL_GAMMA = 2.0
-__C.RCNN.CLS_WEIGHT = np.array([1.0, 1.0, 1.0], dtype=np.float32)
-__C.RCNN.CLS_FG_THRESH = 0.6
-__C.RCNN.CLS_BG_THRESH = 0.45
-__C.RCNN.CLS_BG_THRESH_LO = 0.05
-__C.RCNN.REG_FG_THRESH = 0.55
-__C.RCNN.FG_RATIO = 0.5
-__C.RCNN.ROI_PER_IMAGE = 64
-__C.RCNN.HARD_BG_RATIO = 0.6
-
 # config of testing
 __C.RCNN.SCORE_THRESH = 0.3
 __C.RCNN.NMS_THRESH = 0.1
-
-
-# general training config
-__C.TRAIN = edict()
-__C.TRAIN.SPLIT = 'train'
-__C.TRAIN.VAL_SPLIT = 'smallval'
-
-__C.TRAIN.LR = 0.002
-__C.TRAIN.LR_CLIP = 0.00001
-__C.TRAIN.LR_DECAY = 0.5
-__C.TRAIN.DECAY_STEP_LIST = [50, 100, 150, 200, 250, 300]
-__C.TRAIN.LR_WARMUP = False
-__C.TRAIN.WARMUP_MIN = 0.0002
-__C.TRAIN.WARMUP_EPOCH = 5
-
-__C.TRAIN.BN_MOMENTUM = 0.9
-__C.TRAIN.BN_DECAY = 0.5
-__C.TRAIN.BNM_CLIP = 0.01
-__C.TRAIN.BN_DECAY_STEP_LIST = [50, 100, 150, 200, 250, 300]
-
-__C.TRAIN.OPTIMIZER = 'adam'
-__C.TRAIN.WEIGHT_DECAY = 0.0  # "L2 regularization coeff [default: 0.0]"
-__C.TRAIN.MOMENTUM = 0.9
-
-__C.TRAIN.MOMS = [0.95, 0.85]
-__C.TRAIN.DIV_FACTOR = 10.0
-__C.TRAIN.PCT_START = 0.4
-
-__C.TRAIN.GRAD_NORM_CLIP = 1.0
-
-__C.TRAIN.RPN_PRE_NMS_TOP_N = 12000
-__C.TRAIN.RPN_POST_NMS_TOP_N = 2048
-__C.TRAIN.RPN_NMS_THRESH = 0.85
-__C.TRAIN.RPN_DISTANCE_BASED_PROPOSE = True
 
 
 __C.TEST = edict()
