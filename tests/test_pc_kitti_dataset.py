@@ -9,8 +9,8 @@ if __name__ == "__main__":
     # Path to the kitti dataset
     dataset_path = '/media/data3/tjtanaa/kitti_dataset'
         
-
-    dataset = PCKittiDatabaseGenerator(root_dir=dataset_path, split='train')
+    dataset = PCKittiDatabaseGenerator(root_dir=dataset_path, split='train', classes=['Car', 'Pedestrian', 'Person_sitting'])
+    dataset = PCKittiDatabaseGenerator(root_dir=dataset_path, split='train', classes=['Car'])
 
     database_path = os.path.join(dataset_path, "gt_database")
     os.makedirs(database_path, exist_ok=True)

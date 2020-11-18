@@ -11,3 +11,4 @@ src/*.egg-info
 lib
 lib64
 /demos/pc_*/data/*.csv
+/demos/pc_*/

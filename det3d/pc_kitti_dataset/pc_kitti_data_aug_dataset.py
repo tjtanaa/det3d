@@ -31,8 +31,8 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
     """
 
     def __init__(self, root_dir:str, npoints:int =16384, split: str ='train', 
-                classes:List[str] =['Car'], mode:str='TRAIN', random_select:bool =True,
-                gt_database_dir=None, aug_hard_ratio:float=0.5):
+                classes:List[str] =['Car'], random_select:bool =True,
+                gt_database_dir=None, aug_hard_ratio:float=0.5, **kwargs):
         super().__init__(root_dir=root_dir, split=split)
 
         # if classes == 'Car':
@@ -49,7 +49,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         # else:
         #     assert False, "Invalid classes: %s" % classes
 
-        self.split = split
+        # self.split = super().split
         self.classes = ['Background']
         classes.sort()
         self.classes.extend(classes)
@@ -69,11 +69,14 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         self.gt_database = None
         self.aug_hard_ratio = aug_hard_ratio
 
-        assert mode in ['TRAIN', 'EVAL', 'TEST'], 'Invalid mode: %s' % mode
-        self.mode = mode
+        # assert mode in ['TRAIN', 'EVAL', 'TEST'], 'Invalid mode: %s' % mode
+        assert split in ['train', 'val', 'train_val', 'train_val_test' 'test'], 'Invalid mode: %s' % split
+        # self.split = split
+        # print("PCKittiAugmentation ", self.split)
+        # self.mode = mode
 
         if gt_database_dir is not None:
-            gt_database_path = os.path.join(gt_database_dir, '%s_gt_database_level_%s.pkl' % (self.split, '_'.join(self.classes)))
+            gt_database_path = os.path.join(gt_database_dir, '%s_gt_database_level_%s.pkl' % (self.split, '-'.join(self.classes)))
             self.gt_database = pickle.load(open(gt_database_path, 'rb'))
 
             if self.aug_hard_ratio > 0:
@@ -93,13 +96,16 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         else:
             cfg.GT_AUG_ENABLED = False
 
-        if self.mode == 'TRAIN':
+        # if self.mode == 'TRAIN':
+        if self.split == "train":
             self.preprocess_rpn_training_data()
         else:
             self.sample_id_list = [int(sample_id) for sample_id in self.image_idx_list]
             # self.logger.info('Load testing samples from %s' % self.imageset_dir)
             # self.logger.info('Done: total test samples %d' % len(self.sample_id_list))
 
+    def get_sample_id_list(self):
+        return self.sample_id_list
 
     def preprocess_rpn_training_data(self):
         """
@@ -148,7 +154,8 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         :return: list
         """
         type_whitelist = self.classes
-        if self.mode == 'TRAIN' and cfg.INCLUDE_SIMILAR_TYPE:
+        # if self.mode == 'TRAIN' and cfg.INCLUDE_SIMILAR_TYPE:
+        if self.split == 'train' and cfg.INCLUDE_SIMILAR_TYPE:
             type_whitelist = list(self.classes)
             if 'Car' in self.classes:
                 type_whitelist.append('Van')
@@ -159,7 +166,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         for obj in obj_list:
             if obj.cls_type not in type_whitelist:  # rm Van, 20180928
                 continue
-            if self.mode == 'TRAIN' and cfg.PC_REDUCE_BY_RANGE and (self.check_pc_range(obj.pos) is False):
+            if self.split == 'train' and cfg.PC_REDUCE_BY_RANGE and (self.check_pc_range(obj.pos) is False):
                 continue
             valid_obj_list.append(obj)
         return valid_obj_list
@@ -244,7 +251,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         pts_rect = pts_rect[pts_valid_flag][:, 0:3]
         pts_intensity = pts_intensity[pts_valid_flag]
 
-        if cfg.GT_AUG_ENABLED and self.mode == 'TRAIN':
+        if cfg.GT_AUG_ENABLED and self.split == 'train':
             # all labels for checking overlapping
             all_gt_obj_list = self.filtrate_dc_objects(self.get_label(sample_id))
             all_gt_boxes3d = kitti_utils.objs_to_boxes3d(all_gt_obj_list)
@@ -256,7 +263,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
                     self.apply_gt_aug_to_one_scene(sample_id, pts_rect, pts_intensity, all_gt_boxes3d)
 
         # generate inputs
-        if self.mode == 'TRAIN' or self.random_select:
+        if self.split == 'train' or self.random_select:
             if self.npoints < len(pts_rect):
                 pts_depth = pts_rect[:, 2] # Front direction z-axis
                 pts_near_flag = pts_depth < 40.0 # Front direction z axis in camera coordinate
@@ -285,7 +292,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
 
         sample_info = {'sample_id': sample_id, 'random_select': self.random_select}
 
-        if self.mode == 'TEST':
+        if self.split == 'test':
             # if cfg.RPN.USE_INTENSITY:
             #     pts_input = np.concatenate((ret_pts_rect, ret_pts_features), axis=1)  # (N, C)
             # else:
@@ -296,7 +303,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
             return sample_info
 
         gt_obj_list = self.filtrate_objects(self.get_label(sample_id))
-        if cfg.GT_AUG_ENABLED and self.mode == 'TRAIN' and gt_aug_flag:
+        if cfg.GT_AUG_ENABLED and self.split == 'train' and gt_aug_flag:
             gt_obj_list.extend(extra_gt_obj_list)
         gt_boxes3d = kitti_utils.objs_to_boxes3d(gt_obj_list)
 
@@ -309,10 +316,14 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         # data augmentation
         aug_pts_rect = ret_pts_rect.copy()
         aug_gt_boxes3d = gt_boxes3d.copy()
-        if cfg.AUG_DATA and self.mode == 'TRAIN':
+        if cfg.AUG_DATA and self.split == 'train':
             aug_pts_rect, aug_gt_boxes3d, aug_method = self.data_augmentation(aug_pts_rect, aug_gt_boxes3d, gt_alpha,
                                                                               sample_id)
             sample_info['aug_method'] = aug_method
+
+
+        # angle_clipped_aug_gt_boxes3d
+        aug_gt_boxes3d[:,6] = limit_period(aug_gt_boxes3d[:,6], offset=0.5, period=2*np.pi) 
 
         # # prepare input
         # if cfg.RPN.USE_INTENSITY:
@@ -329,6 +340,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         # sample_info['rpn_reg_label'] = rpn_reg_label
         sample_info['gt_boxes3d'] = aug_gt_boxes3d # note that the height is not the true height, you have to - h/2
         sample_info['gt_cls_type_list'] = objs_to_cls_type_list # Object3d
+        sample_info['calib'] = calib
         return sample_info
 
     def rotate_box3d_along_y(self, box3d, rot_angle):
@@ -495,7 +507,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
             x, z = aug_gt_boxes3d[:, 0], aug_gt_boxes3d[:, 2]
             beta = np.arctan2(z, x)
             new_ry = np.sign(beta) * np.pi / 2 + gt_alpha - beta
-            aug_gt_boxes3d[:, 6] = limit_period(new_ry, offset=1.0, period=2*np.pi)  # TODO: not in [-np.pi / 2, np.pi / 2]
+            aug_gt_boxes3d[:, 6] = limit_period(new_ry, offset=0.5, period=2*np.pi)  # TODO: not in [-np.pi / 2, np.pi / 2]
 
             # new_ry = aug_gt_boxes3d[:, 6] + angle
             # aug_gt_boxes3d[:, 6] = limit_period(new_ry, offset=1.0, period=2*np.pi)

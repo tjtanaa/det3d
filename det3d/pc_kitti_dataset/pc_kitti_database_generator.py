@@ -22,7 +22,7 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
     Args:
         KittiDatasetBase ([type]): [description]
     """
-    def __init__(self, root_dir, split='train', classes:List[str]=['Car']):
+    def __init__(self, root_dir, split='train', classes:List[str]=['Car'], **kwargs):
         print("PCKittiDatabaseGenerator\t: root\t:", root_dir)
         super().__init__(root_dir, split=split)
         self.gt_database = None
@@ -110,7 +110,7 @@ class PCKittiDatabaseGenerator(KittiDatasetBase):
             # print(np.max(pts_intensity[total_mask]))
             # return pts_rect, pts_intensity, total_mask
             
-        save_file_name = os.path.join(save_path, '%s_gt_database_level_%s.pkl' % (self.split, '_'.join(self.classes)))
+        save_file_name = os.path.join(save_path, '%s_gt_database_level_%s.pkl' % (self.split, '-'.join(self.classes)))
         with open(save_file_name, 'wb') as f:
             pickle.dump(gt_database, f)
 

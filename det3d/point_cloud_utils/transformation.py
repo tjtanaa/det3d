@@ -2,9 +2,12 @@ from __future__ import division
 
 import numpy as np
 from numpy.linalg import multi_dot
-# import cv2
+import cv2
 from typing import List, Set, Dict, Tuple, Optional
 from typing import Callable, Iterator, Union, Optional, List, Any
+
+from numba import cuda
+
 
 '''
 This augmentation is performed instance-wised, not for batch-processing.
@@ -196,5 +199,23 @@ def perspective_transformation(map, scale, padding_list=None, mode='g'):
 
 def horizontal_flip(map):
     return map[:, ::-1, :]
+
+@cuda.jit
+def allocate_bev(points, bev_buffer, voxel_size, coor_range):
+    
+    pass
+
+def points_to_bev(points, voxel_size, coor_range):
+    assert points.ndim == 3
+
+    bev_x_len = np.ceil((coor_range[3] - coor_range[0])/voxel_size[0])
+    bev_y_len = np.ceil((coor_range[4] - coor_range[1])/voxel_size[1])
+    bev_z_len = np.ceil((coor_range[5] - coor_range[2])/voxel_size[2])
+
+
+    bev_buffer = np.zeros(shape=(bev_x_len, bev_y_len, bev_z_len))
+
+    bev_map = allocate_bev(points, bev_buffer, voxel_size, coor_range)
+    return bev_map
 
 

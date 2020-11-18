@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # gt_database_dir = os.path.join(database_path, "train_gt_database_level_Car.pkl")
     aug_dataset = PCKittiAugmentedDataset(root_dir=dataset_path, split='train', 
                 npoints =16384,
-                classes =['Car'], mode='TRAIN', random_select =True,
+                classes =['Car'], random_select =True,
                 gt_database_dir=database_path, aug_hard_ratio=0.7)
 
     print("============ Grab Aug Sample =====================")
@@ -26,6 +26,10 @@ if __name__ == "__main__":
         # sample_info['gt_boxes3d'] = aug_gt_boxes3d # note that the height is not the true height, you have to - h/2
         # sample_info['gt_cls_type_list'] = objs_to_cls_type_list # Object3d
         # Pass data and create html files.
+
+        print("x: ", np.min(sample_info['pts_rect'][:,0]), np.max(sample_info['pts_rect'][:,0]))
+        print("y: ", np.min(sample_info['pts_rect'][:,1]), np.max(sample_info['pts_rect'][:,1]))
+        print("z: ", np.min(sample_info['pts_rect'][:,2]), np.max(sample_info['pts_rect'][:,2]))
         sample_info['pts_rect'][:,1] *= -1 # mirror the y axis
         coors = sample_info['pts_rect']
         bbox_params = np.stack([sample_info['gt_boxes3d'][:,5], sample_info['gt_boxes3d'][:,3], sample_info['gt_boxes3d'][:,4],

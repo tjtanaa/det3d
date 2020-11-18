@@ -26,25 +26,25 @@ class PCKittiSingleStagePointwiseDataset(PCKittiAugmentedDataset):
     """
 
     def __init__(self, root_dir:str, npoints:int =16384, split: str ='train', 
-                classes:List[str] =['Car'], mode:str='TRAIN', random_select:bool =True,
-                gt_database_dir=None, aug_hard_ratio:float=0.5):
+                classes:List[str] =['Car'], random_select:bool =True,
+                gt_database_dir=None, aug_hard_ratio:float=0.5, **kwargs):
         super().__init__(root_dir = root_dir, 
                 npoints=npoints, 
                 split=split, 
                 classes=classes, 
-                mode=mode, 
                 random_select=random_select,
                 gt_database_dir=gt_database_dir, 
-                aug_hard_ratio=aug_hard_ratio)
+                aug_hard_ratio=aug_hard_ratio, **kwargs)
         self.classes = self.classes
         self.num_class = self.classes.__len__()
 
         self.npoints = npoints
         self.random_select = random_select
         self.aug_hard_ratio = aug_hard_ratio
-
-        assert mode in ['TRAIN', 'EVAL', 'TEST'], 'Invalid mode: %s' % mode
-        self.mode = mode
+        # self.split = super().split
+        assert split in ['train', 'val', 'train_val', 'train_val_test', 'test'], 'Invalid mode: %s' % split
+        # self.split = split
+        # print("PCKittiSingleStagePointwiseDataset ", self.split)
 
     def __len__(self):
         return len(self.sample_id_list)
@@ -76,7 +76,7 @@ class PCKittiSingleStagePointwiseDataset(PCKittiAugmentedDataset):
             pts_input = sample_info['pts_rect']
 
         sample_info['pts_input'] = pts_input
-        if self.mode == "TEST":
+        if self.split == "test":
             return sample_info
 
         # generate training labels

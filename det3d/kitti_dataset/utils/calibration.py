@@ -31,6 +31,17 @@ class Calibration(object):
         self.P2 = calib['P2']  # 3 x 4
         self.R0 = calib['R0']  # 3 x 3
         self.V2C = calib['Tr_velo2cam']  # 3 x 4
+        
+
+
+        self.V2C_R = np.zeros((3,3))
+        self.V2C_t = np.zeros((3))
+        self.V2C_R = self.V2C[:3,:3]
+        self.V2C_t = self.V2C[:3,3]
+        self.invV2C_R = np.linalg.inv(self.V2C_R)
+        self.invR0 = np.linalg.inv(self.R0)
+
+        
 
         # Camera intrinsics and extrinsics
         self.cu = self.P2[0, 2]
@@ -56,7 +67,63 @@ class Calibration(object):
         pts_lidar_hom = self.cart_to_hom(pts_lidar)
         pts_rect = np.dot(pts_lidar_hom, np.dot(self.V2C.T, self.R0.T))
         # pts_rect = reduce(np.dot, (pts_lidar_hom, self.V2C.T, self.R0.T))
+
+        # custom_pts_lidar = self.rect_to_lidar(pts_rect)
+        # print("recttolidar")
+        # print(custom_pts_lidar.shape)
+        # print("Number of Elements that are equal", np.sum(np.isclose(pts_lidar, custom_pts_lidar, atol=1e-07)))
+        # print("num elements: ", np.product(custom_pts_lidar.shape))
+        # assert np.sum(np.isclose(pts_lidar, custom_pts_lidar, atol=1e-07)) == np.product(custom_pts_lidar.shape)
         return pts_rect
+
+
+    def rect_to_lidar(self, pts_rect):
+        """
+        :param pts_lidar: (N, 3)
+        :return pts_rect: (N, 3)
+        """
+        pts_lidar_ = np.dot(pts_rect, self.invR0.T)
+        # print(pts_lidar.shape)
+        pts_lidar_ = pts_lidar_ - self.V2C_t
+        pts_lidar = np.dot(pts_lidar_, self.invV2C_R.T) 
+        return pts_lidar
+
+    # def lidar_to_rect_custom(self, pts_lidar):
+    #     """
+    #     :param pts_lidar: (N, 3)
+    #     :return pts_rect: (N, 3)
+    #     """
+    #     pts_lidar_hom = self.cart_to_hom(pts_lidar)
+    #     pts_rect = np.dot(pts_lidar_hom, self.V2C_4x4.T)
+    #     print("lidartorect custom")
+    #     print(pts_rect.shape)
+    #     print(pts_rect)
+    #     print("=========")
+    #     # print(pts_rect[0])
+    #     # print(pts_rect[1])
+    #     # print(pts_rect[2])
+    #     pts_rect = np.dot(pts_rect[:,:3], self.R0.T)
+    #     # pts_rect = np.dot(pts_lidar_hom, np.dot(self.V2C.T, self.R0.T))
+    #     # pts_rect = reduce(np.dot, (pts_lidar_hom, self.V2C.T, self.R0.T))
+    #     return pts_rect
+
+    # def lidar_to_rect_custom_2(self, pts_lidar):
+    #     """
+    #     :param pts_lidar: (N, 3)
+    #     :return pts_rect: (N, 3)
+    #     """
+    #     # pts_lidar_hom = self.cart_to_hom(pts_lidar)
+    #     pts_rect_ = np.dot(pts_lidar, self.V2C_R.T) + self.V2C_t
+    #     print("lidartorect custom")
+    #     print(pts_rect_.shape)
+    #     print(pts_rect_)
+    #     print("=========")
+    #     # print(pts_rect[0])
+    #     # print(pts_rect[1])
+    #     # print(pts_rect[2])
+    #     pts_rect = np.dot(pts_rect_[:,:3], self.R0.T)
+    #     return pts_rect
+
 
     def rect_to_img(self, pts_rect):
         """

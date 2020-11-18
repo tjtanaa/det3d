@@ -34,9 +34,28 @@ class KittiDatasetBase(object):
         self.split = split
         is_test = self.split == 'test'
         self.imageset_dir = os.path.join(root_dir, 'KITTI', 'object', 'testing' if is_test else 'training')
-
-        split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', split + '.txt')
-        self.image_idx_list = [x.strip() for x in open(split_dir).readlines()]
+        self.image_idx_list = []
+        if split == 'train_val':
+            split_list = split.split('_')
+            for s in split_list:
+                split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', s + '.txt')
+                self.image_idx_list.extend([x.strip() for x in open(split_dir).readlines()])
+                # print(self.image_idx_list[0], "\t", print(self.image_idx_list[-1]))
+            self.image_idx_list= self.image_idx_list[:-784]
+            # print(len(self.image_idx_list))
+            self.split = 'train'
+            # exit()
+        elif split == 'train_val_test':
+            split_list = split.split('_')
+            for s in split_list:
+                split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', s + '.txt')
+                self.image_idx_list.extend([x.strip() for x in open(split_dir).readlines()])
+            self.image_idx_list= self.image_idx_list[-784:]
+            # print(len(self.image_idx_list))
+            self.split = 'val'
+        else:
+            split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', split + '.txt')
+            self.image_idx_list = [x.strip() for x in open(split_dir).readlines()]
         # print(len(self.image_idx_list))
         self.num_sample = self.image_idx_list.__len__()
 

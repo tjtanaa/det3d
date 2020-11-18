@@ -12,7 +12,7 @@ if __name__ == "__main__":
     # gt_database_dir = os.path.join(database_path, "train_gt_database_level_Car.pkl")
     aug_dataset = PCKittiSingleStagePointwiseDataset(root_dir=dataset_path, split='train', 
                 npoints =16384,
-                classes =['Car'], mode='TRAIN', random_select =True,
+                classes =['Car'], random_select =True,
                 gt_database_dir=database_path, aug_hard_ratio=0.7)
 
     print("============ Grab Aug Sample =====================")
@@ -41,7 +41,7 @@ if __name__ == "__main__":
     print("============ Grab W/O Sample =====================")
     wo_aug_dataset = PCKittiSingleStagePointwiseDataset(root_dir=dataset_path, split='train', 
                 npoints =16384,
-                classes =['Car'], mode='TRAIN', random_select =True,
+                classes =['Car'], random_select =True,
                 gt_database_dir=None, aug_hard_ratio=0.7)
     for i in range(20):
         sample_info = wo_aug_dataset.get_rpn_sample(i) 
