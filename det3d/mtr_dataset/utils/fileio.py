@@ -73,7 +73,7 @@ def load_directory_list_from_path(path: str, suffix: str ='_dir') -> List[str]:
         FileNotFoundError: The `path` does not exists
 
     Returns:
-        List[str]: A list of absolute path to the directories with suffix.
+        List[str]: A list of relative path to the directories with suffix.
     """
     directory_list = []
     if(os.path.exists(path)):

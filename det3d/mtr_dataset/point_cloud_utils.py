@@ -3,6 +3,7 @@ import os
 import numpy as np
 from numpy.linalg import multi_dot
 import cv2
+import open3d as o3d
 import os
 import numpy as np
 from typing import List, Set, Dict, Tuple, Optional, Any
@@ -108,3 +109,24 @@ def shear(shear_range, mode, shear_xy=None, T=None):
 def transform(data, T):
     transformed = np.transpose(np.dot(T, np.transpose(data)))
     return transformed
+
+
+def denoising_point_cloud_index(point_cloud:Any, nb_neighbors=20, std_ratio=1.0):
+    """
+        This is a function that returns the indices of the inliers
+
+    Args:
+        point_cloud (Any): [description]
+        nb_neighbors (int, optional): [description]. Defaults to 20.
+        std_ratio (float, optional): [description]. Defaults to 1.0.
+
+    Returns:
+        [list]: list of indices of inliers
+    """
+    xyz = point_cloud[:,:3]
+    pcd = o3d.geometry.PointCloud()
+    pcd.points = o3d.utility.Vector3dVector(xyz)
+
+    cl, ind = pcd.remove_statistical_outlier(nb_neighbors=nb_neighbors,
+                                            std_ratio=std_ratio)
+    return np.array(ind)

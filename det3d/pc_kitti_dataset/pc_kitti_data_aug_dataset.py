@@ -54,6 +54,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         classes.sort()
         self.classes.extend(classes)
         self.num_class = self.classes.__len__()
+        print("KITTI DATASET Split: ", self.split, "  LOAD " , str(self.num_class) , " types of data ", self.classes )
 
         self.npoints = npoints
         self.sample_id_list = []
@@ -70,7 +71,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         self.aug_hard_ratio = aug_hard_ratio
 
         # assert mode in ['TRAIN', 'EVAL', 'TEST'], 'Invalid mode: %s' % mode
-        assert split in ['train', 'val', 'train_val', 'train_val_test' 'test'], 'Invalid mode: %s' % split
+        assert split in ['train', 'val', 'train_val', 'train_val_test', 'test'], 'Invalid mode: %s' % split
         # self.split = split
         # print("PCKittiAugmentation ", self.split)
         # self.mode = mode
@@ -319,7 +320,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         if cfg.AUG_DATA and self.split == 'train':
             aug_pts_rect, aug_gt_boxes3d, aug_method = self.data_augmentation(aug_pts_rect, aug_gt_boxes3d, gt_alpha,
                                                                               sample_id)
-            sample_info['aug_method'] = aug_method
+            # sample_info['aug_method'] = aug_method
 
 
         # angle_clipped_aug_gt_boxes3d
@@ -341,6 +342,8 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         sample_info['gt_boxes3d'] = aug_gt_boxes3d # note that the height is not the true height, you have to - h/2
         sample_info['gt_cls_type_list'] = objs_to_cls_type_list # Object3d
         sample_info['calib'] = calib
+
+        # print("sample_info has ",  len(sample_info.keys()), "keys", sample_info.keys())
         return sample_info
 
     def rotate_box3d_along_y(self, box3d, rot_angle):

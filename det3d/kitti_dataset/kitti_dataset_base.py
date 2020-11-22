@@ -21,6 +21,45 @@ class KittiDatasetBase(object):
        4) annotations/ label
        5) plane
 
+        Note: 
+        The coordinate system of the point cloud and the labels are different
+        Point cloud is in a Z-up coordinate system.
+        Label is in a Y-down coordinate system.
+
+        Point cloud   (Velodyne Coordinate System)    Yaw_pc = -Yaw_label                      
+
+                        (z) height
+                            ^
+                            |
+                width       |
+        Front   (x) <-------|
+                           / 
+                          /
+                         /
+                        L
+                        (y) length  Left
+
+
+        Label  (CAM 0 Coordinate System)     Yaw_label = -Yaw_pc                      
+
+                   
+                length   (Right)    
+                    (x) <-------|
+                               /| 
+                              / |
+                             /  |
+                            L   |
+                width   (z)     |
+                Front           v
+                                (y) height (Bottom)
+
+
+        IMPORTANT:
+        The center of label (x,y,z) computed from transformation matrix is not the
+        true center.
+        In Point Cloud (Velodyne) coordinate, you have to offset the z by (+h/2)
+        In Camera (CAM 0) coordinate, you have to offset the y by (-h/2)
+
     """
     def __init__(self, root_dir: str, split: str='train'):
         """ Constructor
@@ -46,7 +85,7 @@ class KittiDatasetBase(object):
             self.split = 'train'
             # exit()
         elif split == 'train_val_test':
-            split_list = split.split('_')
+            split_list = split.split('_')[:-1]
             for s in split_list:
                 split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', s + '.txt')
                 self.image_idx_list.extend([x.strip() for x in open(split_dir).readlines()])
@@ -56,7 +95,7 @@ class KittiDatasetBase(object):
         else:
             split_dir = os.path.join(root_dir, 'KITTI', 'ImageSets', split + '.txt')
             self.image_idx_list = [x.strip() for x in open(split_dir).readlines()]
-        # print(len(self.image_idx_list))
+        print(len(self.image_idx_list))
         self.num_sample = self.image_idx_list.__len__()
 
         self.image_dir = os.path.join(self.imageset_dir, 'image_2')
@@ -87,6 +126,7 @@ class KittiDatasetBase(object):
 
     def get_calib(self, idx):
         calib_file = os.path.join(self.calib_dir, '%06d.txt' % idx)
+        # print("calib file: ", calib_file, " Found: ", os.path.exists(calib_file))
         assert os.path.exists(calib_file)
         return calibration.Calibration(calib_file)
 

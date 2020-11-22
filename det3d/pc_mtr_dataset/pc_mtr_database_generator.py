@@ -45,6 +45,9 @@ class PCMTRDatabaseGenerator(MTRDatasetBase):
     def __getitem__(self, item):
         raise NotImplementedError
 
+    def get_invalid_region_mask(self, xyz: Any):
+        return super()._get_invalid_region_mask(xyz)
+
     def filtrate_objects(self, obj_list):
         return obj_list
         raise NotImplementedError
