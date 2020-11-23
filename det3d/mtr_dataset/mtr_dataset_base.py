@@ -176,6 +176,19 @@ class MTRDatasetBase(object):
         
         return invalid_point_mask
 
+    def _normalize_features(self, features):
+        # Range [32 bit unsigned int - only 20 bits used] - 1048575
+
+        # Signal Photons [16 bit unsigned int] - 65536
+
+        # Reflectivity [16 bit unsigned int] - 65536
+
+        # Ambient Photons [16 bit unsigned int] - 65536
+
+        features /= np.array([1048575, 65536-1, 65536-1, 65536-1])
+
+        return features
+
     def _load_single_point_cloud(self, filepath: str):
         if(os.path.exists(filepath)):
             # print("filepath: ", filepath)
@@ -205,6 +218,10 @@ class MTRDatasetBase(object):
 
             # get the mask of those that are located at (x,y,z) = (0,0,z) (in bird eye view)
             mask = np.all(np.abs(filtered_point_cloud_np[:,:2]) < 0.1, axis=1)
+
+            # normalize feature
+
+            point_cloud_np[:,3:] = self._normalize_features(point_cloud_np[:,3:])
 
             return filtered_point_cloud_np[~mask,:]
         else:

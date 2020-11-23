@@ -75,8 +75,8 @@ def boxes3d_to_corners3d(boxes3d, rotate=True):
         rz = boxes3d[:, 6]
         zeros, ones = np.zeros(rz.size, dtype=np.float32), np.ones(rz.size, dtype=np.float32)
         
-        rot_list = np.array([[np.cos(rz), -np.sin(rz), zeros],
-                    [np.sin(rz), np.cos(rz), zeros],
+        rot_list = np.array([[np.cos(rz), np.sin(rz), zeros],
+                    [-np.sin(rz), np.cos(rz), zeros],
                     [zeros, zeros, ones]]) # z axis rotation # (3, 3, N)
 
         R_list = np.transpose(rot_list, (2, 0, 1))  # (N, 3, 3)
