@@ -30,3 +30,8 @@ if __name__ == "__main__":
     test_dataset = MTRDatasetBase(dataset_path, split='test')
     print("================== Test dataset =========================")
     print("Number of samples\t:", test_dataset.num_sample)
+
+
+    real_dataset = MTRDatasetBase(dataset_path, split='real')
+    print("================== Test dataset =========================")
+    print("Number of samples\t:", real_dataset.num_sample)

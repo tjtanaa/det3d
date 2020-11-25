@@ -38,19 +38,19 @@ def rotate_pc_along_y(pc, rot_angle):
     pc[:, [0, 2]] = np.dot(pc[:, [0, 2]], np.transpose(rotmat))
     return pc
 
-# updated for Specifically for MTR Dataset
+# updated for Specifically for MTR Dataset (Z up coordinate)
 def boxes3d_to_corners3d(boxes3d, rotate=True):
     """
     :param boxes3d: (N, 7) [x, y, z, h, w, l, ry]
     :param rotate:
     :return: corners3d: (N, 8, 3)
 
-
+    (width)                 (height)
         Front  X <----- . Z Up
                         |
                         |
                         v
-                        Left Y
+                        Left Y (length)
 
     2(l/2, -w/2, h/2)        3(-l/2, -w/2, h/2)
     6(l/2, -w/2, -h/2)        7(-l/2, -w/2, -h/2)
@@ -67,8 +67,8 @@ def boxes3d_to_corners3d(boxes3d, rotate=True):
     """
     boxes_num = boxes3d.shape[0]
     h, w, l = boxes3d[:, 3], boxes3d[:, 4], boxes3d[:, 5]
-    x_corners = np.array([l / 2., l / 2.,   -l / 2.,    -l / 2.,    l / 2.,     l / 2.,     -l / 2., -l / 2.], dtype=np.float32).T  # (N, 8)
-    y_corners = np.array([w / 2., -w / 2.,  -w / 2.,    w / 2.,     w / 2.,     -w / 2.,    -w / 2., w / 2.], dtype=np.float32).T  # (N, 8)
+    x_corners = np.array([w / 2., w / 2.,   -w / 2.,    -w / 2.,    w / 2.,     w / 2.,     -w / 2., -w / 2.], dtype=np.float32).T  # (N, 8)
+    y_corners = np.array([l / 2., -l / 2.,  -l / 2.,    l / 2.,     l / 2.,     -l / 2.,    -l / 2., l / 2.], dtype=np.float32).T  # (N, 8)
     z_corners = np.array([h / 2., h / 2.,   h / 2.,     h / 2.,     -h / 2.,    -h / 2.,    -h / 2., -h / 2.], dtype=np.float32).T  # (N, 8)
 
     if rotate:

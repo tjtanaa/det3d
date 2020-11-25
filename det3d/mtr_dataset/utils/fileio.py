@@ -1,3 +1,11 @@
+"""
+
+    in kitti w is along x axis in lidar, in mtr, w is along y axis, so swap
+"""
+
+
+
+
 import os
 import sys
 import json
@@ -196,7 +204,8 @@ def load_filenames_from_directory(directory_path: str, extension: str='.bin') ->
     """
     """
 def load_annotations_from_file_in_mtr_format(filepath: str) -> List[Union[str, int, float]]:
-    """ This is a function to load the annotations
+    """ This is a function to load the annotations of mtr format
+
 
         [Note]
 
@@ -242,6 +251,7 @@ def load_annotations_from_file_in_mtr_format(filepath: str) -> List[Union[str, i
             # alpha = -1
             # bbox2d = [-1, -1, -1, -1]
             dimensions = [bboxes['height'], bboxes['width'], bboxes['length']]
+            # dimensions = [bboxes['height'], bboxes['length'], bboxes['width']]
             location = [bboxes['center']['x'], bboxes['center']['y'], bboxes['center']['z']]
             rotation_y = bboxes['angle']
 
@@ -318,6 +328,7 @@ def load_annotations_from_file_in_kittimot_format(filepath: str, frame_id: int) 
             alpha = -1
             bbox2d = [-1, -1, -1, -1]
             dimensions = [bboxes['height'], bboxes['width'], bboxes['length']]
+            # dimensions = [bboxes['height'], bboxes['length'], bboxes['width']]
             location = [bboxes['center']['x'], bboxes['center']['y'], bboxes['center']['z']]
             rotation_y = bboxes['angle']
 

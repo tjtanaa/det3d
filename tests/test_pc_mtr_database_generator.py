@@ -20,6 +20,11 @@ if __name__ == "__main__":
     print("================== Dataset ======================")
     print("Number of samples\t:", test_dataset.num_sample)
 
+
+    real_dataset = PCMTRDatabaseGenerator(dataset_path, 'real', point_cloud_statistics_path)
+    print("================== Dataset ======================")
+    print("Number of samples\t:", real_dataset.num_sample)
+
     print("====== Generate Test-Ground Truth Database ===========")
     database_path = "/home/tjtanaa/Documents/AKK/Project4-MTR/Database"
     print("Save to \t:", database_path)

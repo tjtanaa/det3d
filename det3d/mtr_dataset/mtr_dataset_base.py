@@ -66,10 +66,15 @@ class MTRDatasetBase(object):
         self._directory_index = 0
         self._frame_index = 0
         # check if there are training metadata, create one if there isn't
-        split_dir = os.path.join(root_dir, split + '.txt')
-        if(not os.path.exists(split_dir)):
-            self.generate_training_meta_data(root_dir)
-        self.sample_list = [x.strip() for x in open(split_dir).readlines()]
+        assert split =='train' or split =='test' or split =='real'
+        if split == 'train' or split == 'test' or split =='real':
+            split_dir = os.path.join(root_dir, split + '.txt')
+            if(not os.path.exists(split_dir)):
+                self.generate_training_meta_data(root_dir)
+            self.sample_list = [x.strip() for x in open(split_dir).readlines()]
+        # elif split == 'real':
+        #     self.sample_list = 
+        
         self.num_sample = self.sample_list.__len__()
 
     def get_point_cloud_shape(self) -> List[int]:
@@ -189,7 +194,7 @@ class MTRDatasetBase(object):
 
         return features
 
-    def _load_single_point_cloud(self, filepath: str):
+    def _load_single_point_cloud_without_background(self, filepath: str):
         if(os.path.exists(filepath)):
             # print("filepath: ", filepath)
             point_cloud_np = np.fromfile(filepath, '<f4')
@@ -221,17 +226,73 @@ class MTRDatasetBase(object):
 
             # normalize feature
 
-            point_cloud_np[:,3:] = self._normalize_features(point_cloud_np[:,3:])
+            filtered_point_cloud_np[:,3:] = self._normalize_features(filtered_point_cloud_np[:,3:])
 
             return filtered_point_cloud_np[~mask,:]
         else:
             raise FileNotFoundError
 
     
+    def get_lidar_without_background(self, idx):
+        lidar_file = os.path.join(self._data_path, self.sample_list[idx])
+        assert os.path.exists(lidar_file)
+        return self._load_single_point_cloud_without_background(lidar_file)
+
+
+
+    def _load_single_point_cloud(self, filepath: str):
+        if(os.path.exists(filepath)):
+            # print("filepath: ", filepath)
+            point_cloud_np = np.fromfile(filepath, '<f4')
+            # print(point_cloud_np.shape)
+            # print(len(point_cloud_np.tobytes()))
+            point_cloud_np = np.reshape(point_cloud_np, (-1, self._point_cloud_shape[2]))
+            xyz = point_cloud_np[:,:3]
+            features = point_cloud_np[:,3:]
+
+            T_rotate = rotation_matrix(config['point_cloud']['rxyz_offset'] )
+            xyz = transform(xyz, T_rotate)
+            xyz[:,0] += config['point_cloud']['xyz_offset'][0]
+            xyz[:,1] += config['point_cloud']['xyz_offset'][1]
+            xyz[:,2] += config['point_cloud']['xyz_offset'][2]
+
+
+            filtered_point_cloud_np = np.concatenate([ xyz.astype('<f4'), features.astype('<f4')], axis=1).astype('<f4')
+
+            # invalid_point_mask = self._get_remove_background_using_statistics_mask(point_cloud_np)
+            
+            # invalid_region_mask = self._get_invalid_region_mask(point_cloud_np)
+
+            # total_mask = invalid_point_mask | invalid_region_mask
+            
+            # filtered_point_cloud_np = point_cloud_np[~total_mask, :]
+
+            # get the mask of those that are located at (x,y,z) = (0,0,z) (in bird eye view)
+            mask = np.all(np.abs(filtered_point_cloud_np[:,:2]) < 0.1, axis=1)
+
+            # normalize feature
+
+            filtered_point_cloud_np[:,3:] = self._normalize_features(filtered_point_cloud_np[:,3:])
+
+            return filtered_point_cloud_np[~mask,:]
+        else:
+            raise FileNotFoundError
+
+
     def get_lidar(self, idx):
+        """
+        Load raw point cloud data (without filtering)
+
+        Args:
+            idx ([type]): [description]
+
+        Returns:
+            [type]: [description]
+        """
         lidar_file = os.path.join(self._data_path, self.sample_list[idx])
         assert os.path.exists(lidar_file)
         return self._load_single_point_cloud(lidar_file)
+
 
     # to be depreciated
     def load_filenames_by_directory(self):
@@ -277,9 +338,7 @@ class MTRDatasetBase(object):
         
         # self._directory_index += 1
         
-        return seq_data, annotation_filename_list, self._directory_index
-
-    
+        return seq_data, annotation_filename_list, self._directory_index    
 
     def generate_training_meta_data(self, save_path:str) -> None:
         
@@ -311,4 +370,14 @@ class MTRDatasetBase(object):
         test_txt_filepath = os.path.join(save_path, 'test.txt')
         with open(test_txt_filepath, 'w') as f:
             f.writelines("%s\n" % '/'.join(filename.split('/')[-2:])[:-5] for filename in annotation_filename_list[test_start: test_end])
+
+        
+        real_txt_filepath = os.path.join(save_path, 'real.txt')
+        with open(real_txt_filepath, 'w') as f:
+            f.writelines("%s\n" % '/'.join(filename.split('/')[-2:]) for filename in data_filename_list[test_end:])
+
+    # ========== The following codes are use to load no label data ===========
+    # The split setting is called 'real'
+
+
 
