@@ -1,3 +1,7 @@
+import os
+import sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
 from det3d.mtr_dataset.mtr_dataset_base import MTRDatasetBase
 
 

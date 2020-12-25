@@ -29,13 +29,13 @@ class MTRDatasetBase(object):
                     (z) height
                     ^
                     |
-        length      |
+        width       |
         (x) <-------|
                    /
                   /
                  / 
                 L
-               (y) width
+               (y) length
 
 
         
@@ -76,6 +76,13 @@ class MTRDatasetBase(object):
         #     self.sample_list = 
         
         self.num_sample = self.sample_list.__len__()
+
+        with open(os.path.join(self._point_cloud_statistics_path, 'min_range.npy'), 'rb') as f:
+            self.min_array = np.load(f)
+            # print(min_array[:10])
+                
+        with open(os.path.join(self._point_cloud_statistics_path, 'max_range.npy'), 'rb') as f:
+            self.max_array = np.load(f)
 
     def get_point_cloud_shape(self) -> List[int]:
         return self._point_cloud_shape
@@ -135,6 +142,45 @@ class MTRDatasetBase(object):
         sample = convert_mtr_to_kittimot_format(sample, idx)
         return mtr_utils.get_objects_from_label(sample)
 
+
+    def _get_valid_region(self, point_cloud_np: Any):
+        xyz = point_cloud_np[:,:3]
+        
+        # crop the region that is NOT interested
+        invalid_region_mask1 = (xyz[:,0] > -6.949255957496236) & (xyz[:,0] < 3.251014678502448)
+        invalid_region_mask1 &= (xyz[:,1] > 7.899438643537479) & (xyz[:,1] < 11.001353179972943)
+        filtered_point_cloud_np = point_cloud_np[~invalid_region_mask1,:] 
+        xyz = filtered_point_cloud_np[:,:3]
+
+        # crop the region that is NOT interested
+        invalid_region_mask2 = (xyz[:,0] > -13.027740395930584) & (xyz[:,0] < -9.21177287224803)
+        invalid_region_mask2 &= (xyz[:,1] > 7.428958051420843) & (xyz[:,1] < 10.554803788903929)
+        filtered_point_cloud_np = filtered_point_cloud_np[~invalid_region_mask2,:] 
+        xyz = filtered_point_cloud_np[:,:3]
+
+
+        # # crop the region that IS interested
+        # valid_region_mask3 = (xyz[:,1] > -5) & (xyz[:,1] < 1)
+        # valid_region_mask3 &= (xyz[:,0] > -10) & (xyz[:,0] < -0.6)
+        # filtered_point_cloud_np = filtered_point_cloud_np[~valid_region_mask3,:] 
+        # xyz = filtered_point_cloud_np[:,:3]
+        # # print(np.sum(valid_region_mask3))
+
+        # # crop the region that IS interested
+        # valid_region_mask4 = (xyz[:,1] > -5) & (xyz[:,1] < 7.5)
+        # valid_region_mask4 &= (xyz[:,0] > -0.4) & (xyz[:,0] < 4.4)
+        # filtered_point_cloud_np = filtered_point_cloud_np[~valid_region_mask4,:] 
+        # xyz = filtered_point_cloud_np[:,:3]
+
+        # # crop the region that IS interested
+        # valid_region_mask5 = (xyz[:,1] > -5) & (xyz[:,1] < 2.57)
+        # valid_region_mask5 &= (xyz[:,0] > 4.3) & (xyz[:,0] < 10.8)
+        # filtered_point_cloud_np = filtered_point_cloud_np[~valid_region_mask5,:] 
+
+        # total_invalid_mask = invalid_region_mask1 | invalid_region_mask2 | ~(valid_region_mask3 | valid_region_mask4 | valid_region_mask5)
+
+        return filtered_point_cloud_np
+
     def _get_invalid_region_mask(self, point_cloud_np: Any):
         xyz = point_cloud_np[:,:3]
         
@@ -168,16 +214,9 @@ class MTRDatasetBase(object):
         return denoising_point_cloud_index(point_cloud, nb_neighbors, std_ratio)
 
     def _get_remove_background_using_statistics_mask(self, point_cloud_np):
-
-        with open(os.path.join(self._point_cloud_statistics_path, 'min_range.npy'), 'rb') as f:
-                min_array = np.load(f)
-                # print(min_array[:10])
-                
-        with open(os.path.join(self._point_cloud_statistics_path, 'max_range.npy'), 'rb') as f:
-            max_array = np.load(f)
             # print(max_array[:10])
 
-        invalid_point_mask = np.greater(point_cloud_np[:,4], min_array) & np.less(point_cloud_np[:,4], max_array)
+        invalid_point_mask = np.greater(point_cloud_np[:,4], self.min_array) & np.less(point_cloud_np[:,4], self.max_array)
         
         return invalid_point_mask
 
@@ -200,6 +239,8 @@ class MTRDatasetBase(object):
             point_cloud_np = np.fromfile(filepath, '<f4')
             # print(point_cloud_np.shape)
             # print(len(point_cloud_np.tobytes()))
+            # from datetime import datetime
+            # start=datetime.now()
             point_cloud_np = np.reshape(point_cloud_np, (-1, self._point_cloud_shape[2]))
             xyz = point_cloud_np[:,:3]
             features = point_cloud_np[:,3:]
@@ -212,14 +253,20 @@ class MTRDatasetBase(object):
 
 
             point_cloud_np = np.concatenate([ xyz.astype('<f4'), features.astype('<f4')], axis=1).astype('<f4')
+            # point_cloud_np = np.concatenate([ xyz, features], axis=1)
 
             invalid_point_mask = self._get_remove_background_using_statistics_mask(point_cloud_np)
-            
-            invalid_region_mask = self._get_invalid_region_mask(point_cloud_np)
+            filtered_point_cloud_np = point_cloud_np[~invalid_point_mask,:]
 
-            total_mask = invalid_point_mask | invalid_region_mask
+            # invalid_region_mask = self._get_invalid_region_mask(point_cloud_np)
+            # invalid_region_mask = self._get_invalid_region_mask(filtered_point_cloud_np)
+            filtered_point_cloud_np = self._get_valid_region(filtered_point_cloud_np)
+
+            # total_mask = invalid_point_mask | invalid_region_mask
             
-            filtered_point_cloud_np = point_cloud_np[~total_mask, :]
+            # filtered_point_cloud_np = point_cloud_np[~total_mask, :]
+
+            # filtered_point_cloud_np = filtered_point_cloud_np[~invalid_region_mask,:]
 
             # get the mask of those that are located at (x,y,z) = (0,0,z) (in bird eye view)
             mask = np.all(np.abs(filtered_point_cloud_np[:,:2]) < 0.1, axis=1)
@@ -227,6 +274,7 @@ class MTRDatasetBase(object):
             # normalize feature
 
             filtered_point_cloud_np[:,3:] = self._normalize_features(filtered_point_cloud_np[:,3:])
+            # print("inner time", datetime.now()-start)
 
             return filtered_point_cloud_np[~mask,:]
         else:
@@ -353,6 +401,7 @@ class MTRDatasetBase(object):
             data_filename_list.extend(load_filenames_from_directory(current_data_path, extension='.bin'))
             annotation_filename_list.extend(load_filenames_from_directory(current_annotation_path, extension='.json'))
 
+        print(annotation_filename_list)
         print("=============== Generating Training-Test Meta Data ==================")
         print("Data availables: ", len(data_filename_list))
         print("Label availables: ", len(annotation_filename_list))
@@ -376,6 +425,7 @@ class MTRDatasetBase(object):
         with open(real_txt_filepath, 'w') as f:
             f.writelines("%s\n" % '/'.join(filename.split('/')[-2:]) for filename in data_filename_list[test_end:])
 
+        # print(data_filename_list[test_end:test_end+20])
     # ========== The following codes are use to load no label data ===========
     # The split setting is called 'real'
 

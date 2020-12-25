@@ -1,4 +1,7 @@
 import os
+import sys,inspect
+currentdir = os.path.dirname(os.path.abspath(inspect.getfile(inspect.currentframe())))
+parentdir = os.path.dirname(currentdir)
 from det3d.pc_kitti_dataset import PCKittiAugmentedDataset
 
 import numpy as np

@@ -225,6 +225,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
         return self.get_sample(index)
 
     def get_sample(self, index):
+        # print(len(self.sample_id_list))
         sample_id = int(self.sample_id_list[index])
         # print("sample_id: ", sample_id)
         # if sample_id < 10000:

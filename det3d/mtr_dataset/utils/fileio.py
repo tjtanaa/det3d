@@ -17,7 +17,7 @@ from det3d.mtr_dataset.config import config
 from det3d.mtr_dataset.utils.object3d import id_to_cls_type, cls_type_to_id
 
 
-def sort_list(directory_list: List[str], charbefore:int = 20) -> List[str]:
+def sort_list(directory_list: List[str], charbefore:int = 20, extension:str = '.bin') -> List[str]:
     """This is a custom sort function that is used to sort the filename
         of the AKK dataset, which has a variable filename.
 
@@ -26,7 +26,10 @@ def sort_list(directory_list: List[str], charbefore:int = 20) -> List[str]:
         charbefore (int, optional): [description]. Defaults to 20.
     """
     def func(x):
-        return x[:charbefore]+x[charbefore:][:-4].zfill(4)
+        charafter = -9 if extension =='.json' else -4
+        # print("func: ", x[:charbefore]+x[charbefore:][:charafter].zfill(3))
+        return x[:charbefore]+x[charbefore:][:charafter].zfill(3)
+        
     return sorted(directory_list,key=func)
 
 
@@ -192,7 +195,7 @@ def load_filenames_from_directory(directory_path: str, extension: str='.bin') ->
                                             os.path.join(directory_path, filename)
                                             ) and extension in filename)  ]
         
-        filename_list = sort_list(filename_list)
+        filename_list = sort_list(filename_list, extension=extension)
 
         sorted_filenames_list += [os.path.join(directory_path, filename) for filename in filename_list]
     else:
