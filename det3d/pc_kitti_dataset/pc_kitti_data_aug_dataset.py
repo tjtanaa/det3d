@@ -163,6 +163,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
             if 'Pedestrian' in self.classes:  # or 'Cyclist' in self.classes:
                 type_whitelist.append('Person_sitting')
 
+        # print("type_whitelist: ", type_whitelist)
         valid_obj_list = []
         for obj in obj_list:
             if obj.cls_type not in type_whitelist:  # rm Van, 20180928
@@ -271,6 +272,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
                 pts_near_flag = pts_depth < 40.0 # Front direction z axis in camera coordinate
                 far_idxs_choice = np.where(pts_near_flag == 0)[0]
                 near_idxs = np.where(pts_near_flag == 1)[0]
+                # print("far idx choice: ", len(far_idxs_choice))
                 near_idxs_choice = np.random.choice(near_idxs, self.npoints - len(far_idxs_choice), replace=False)
 
                 choice = np.concatenate((near_idxs_choice, far_idxs_choice), axis=0) \
@@ -302,6 +304,7 @@ class PCKittiAugmentedDataset(KittiDatasetBase):
             # sample_info['pts_input'] = pts_input
             sample_info['pts_rect'] = ret_pts_rect
             sample_info['pts_features'] = ret_pts_features
+            sample_info['calib'] = calib
             return sample_info
 
         gt_obj_list = self.filtrate_objects(self.get_label(sample_id))

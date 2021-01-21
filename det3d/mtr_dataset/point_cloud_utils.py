@@ -16,40 +16,40 @@ This augmentation is performed instance-wised, not for batch-processing.
 
 '''
 
-def scale(scale_range, mode='g', scale_xyz=None, T=None):
-    if T is None:
-        T = np.eye(3)
-    if scale_xyz is None:
-        if mode == 'g':
-            scale_factor_xz = gauss_dist(1., scale_range)
-            scale_factor_y = gauss_dist(1., scale_range)
-        elif mode == 'u':
-            scale_factor_xz = uni_dist(1., scale_range)
-            scale_factor_y = uni_dist(1., scale_range)
-        else:
-            raise ValueError("Undefined scale mode: {}".format(mode))
-    else:
-        scale_factor_x, scale_factor_y, scale_factor_z = scale_xyz
-    T = np.dot(T, np.array([[scale_factor_xz, 0, 0],
-                            [0, scale_factor_y, 0],
-                            [0, 0, scale_factor_xz]]))
-    return T, [scale_factor_xz, scale_factor_y]
+# def scale(scale_range, mode='g', scale_xyz=None, T=None):
+#     if T is None:
+#         T = np.eye(3)
+#     if scale_xyz is None:
+#         if mode == 'g':
+#             scale_factor_xz = gauss_dist(1., scale_range)
+#             scale_factor_y = gauss_dist(1., scale_range)
+#         elif mode == 'u':
+#             scale_factor_xz = uni_dist(1., scale_range)
+#             scale_factor_y = uni_dist(1., scale_range)
+#         else:
+#             raise ValueError("Undefined scale mode: {}".format(mode))
+#     else:
+#         scale_factor_x, scale_factor_y, scale_factor_z = scale_xyz
+#     T = np.dot(T, np.array([[scale_factor_xz, 0, 0],
+#                             [0, scale_factor_y, 0],
+#                             [0, 0, scale_factor_xz]]))
+#     return T, [scale_factor_xz, scale_factor_y]
 
 
-def flip(flip=False, T=None):
-    if T is None:
-        T = np.eye(3)
-    if not flip:
-        return np.dot(T, np.eye(3)), 1.
-    else:
-        flip_y = -1 if np.random.rand() > 0.5 else 1
-        # T = np.dot(T, np.array([[1, 0, 0],
-        #                         [0, flip_y, 0],
-        #                         [0, 0, 1]])) # flip along y axis
-        T = np.dot(T, np.array([[flip_y, 0, 0],
-                                [0, 1, 0],
-                                [0, 0, 1]])) # flip along z axis (kitti camera frame)
-        return T, flip_y
+# def flip(flip=False, T=None):
+#     if T is None:
+#         T = np.eye(3)
+#     if not flip:
+#         return np.dot(T, np.eye(3)), 1.
+#     else:
+#         flip_y = -1 if np.random.rand() > 0.5 else 1
+#         # T = np.dot(T, np.array([[1, 0, 0],
+#         #                         [0, flip_y, 0],
+#         #                         [0, 0, 1]])) # flip along y axis
+#         T = np.dot(T, np.array([[flip_y, 0, 0],
+#                                 [0, 1, 0],
+#                                 [0, 0, 1]])) # flip along z axis (kitti camera frame)
+#         return T, flip_y
 
 
 def rotation_matrix(angle: List[float]) -> Any:

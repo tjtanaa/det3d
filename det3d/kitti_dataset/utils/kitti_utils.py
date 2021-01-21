@@ -195,6 +195,18 @@ def objs_to_boxes3d(obj_list):
     return boxes3d
 
 
+def objs_to_boxes3d_include_cls_diff(obj_list, include_cls_diff=True):
+    num_attrs = (9 if include_cls_diff else 7)
+    boxes3d = np.zeros((obj_list.__len__(), num_attrs), dtype=np.float32)
+    for k, obj in enumerate(obj_list):
+        boxes3d[k, 0:3], boxes3d[k, 3], boxes3d[k, 4], boxes3d[k, 5], boxes3d[k, 6] \
+            = obj.pos, obj.h, obj.w, obj.l, obj.ry
+        if include_cls_diff:
+            boxes3d[k,7], boxes3d[k,8] = obj.cls_id, obj.level
+    return boxes3d
+
+
+
 def objs_to_cls_type(obj_list) -> List[str]:
     cls_type_list = []
     for k, obj in enumerate(obj_list):

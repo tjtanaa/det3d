@@ -105,11 +105,14 @@ class KittiDatasetBase(object):
         self.plane_dir = os.path.join(self.imageset_dir, 'planes')
 
     def get_image(self, idx):
-        assert False, 'DO NOT USE cv2 NOW, AVOID DEADLOCK'
+        # assert False, 'DO NOT USE cv2 NOW, AVOID DEADLOCK'
         import cv2
         # cv2.setNumThreads(0)  # for solving deadlock when switching epoch
         img_file = os.path.join(self.image_dir, '%06d.png' % idx)
         assert os.path.exists(img_file)
+        # im = np.array(Image.open(img_file))
+        # print("img shape: ", im.shape)
+        # return im
         return cv2.imread(img_file)  # (H, W, 3) BGR mode
 
     def get_image_shape(self, idx):
